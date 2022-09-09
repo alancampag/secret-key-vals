@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import getpass
 import json
-import os
 from argparse import ArgumentParser
 from typing import Any, Dict, List, Optional, Sequence
 
 import secretkv
+from secretkv import config
 from secretkv.utils import Result, Status
 
 CommandOutput = Dict[str, List[str]]
@@ -19,7 +19,7 @@ class InvalidCommandException(Exception):
 def get_master_password(command: Command) -> str:
     return (
         command.kwargs.pop("masterpass", "")
-        or os.getenv("SECRETKV_MASTERPASS", "")
+        or config.MASTERPASS
         or Cli.prompt_for_password()
     )
 
@@ -29,12 +29,10 @@ class Command:
         self.func_name = func_name
         self.kwargs = kwargs
 
-    def execute(self, dependencies: Dict[str, Any]) -> Optional[CommandOutput]:
-        if not (func := getattr(secretkv, self.func_name, None)):
-            return None
-
-        if not callable(func):
-            return None
+    def execute(self, dependencies: Dict[str, Any]) -> CommandOutput:
+        func = getattr(secretkv, self.func_name, None)
+        if not func or not callable(func):
+            return {"message": [f"Command {self.func_name} doesn't exist"]}
 
         self.kwargs["password"] = get_master_password(self)
 
@@ -42,8 +40,8 @@ class Command:
         response: Result[CommandOutput] = func(**self.kwargs)
         if response.status == Status.Ok:
             return response.data
-        else:
-            raise InvalidCommandException(f"Command {self.func_name} doesn't exist")
+
+        return {"message": ["Something went wrong!"]}
 
 
 class Cli:

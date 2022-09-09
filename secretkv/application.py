@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from secretkv import config
 from secretkv.crypto import Crypto, EncryptedStr
 from secretkv.domain import Secret
 
@@ -24,6 +25,9 @@ class Repository(ABC):
     def save(self, secret: Secret) -> bool:
         ...
 
+    def is_empty(self) -> bool:
+        ...
+
 
 class SecretKV:
     def __init__(self, repository: Repository, crypto: Crypto) -> None:
@@ -33,6 +37,13 @@ class SecretKV:
     @property
     def crypto(self) -> Crypto:
         return self._crypto
+
+    def verify_password(self) -> bool:
+        if self._repository.is_empty():
+            self.create_or_append(config.TAG, config.TAG[::-1])
+            return True
+
+        return bool(self.get_value_from_key(config.TAG))
 
     def list_every_key(self, include_deleted: bool) -> List[str]:
         return [

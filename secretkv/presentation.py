@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 
+from secretkv import config
 from secretkv.application import SecretKV
 from secretkv.utils import Result, Status
 
@@ -11,7 +12,10 @@ def list(
 ) -> Result[Dict[str, List[str]]]:
     app.crypto.configure(password)
 
-    data = {"keys": app.list_every_key(all)}
+    if not app.verify_password():
+        return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
+
+    data = {"keys": [k for k in app.list_every_key(all) if k != config.TAG]}
     return Result[Dict[str, List[str]]](Status.Ok, data)
 
 
@@ -23,11 +27,16 @@ def get(
 ) -> Result[Dict[str, List[str]]]:
     app.crypto.configure(password)
 
-    if not key or not (
-        val := app.get_history_from_key(key)
-        if history
-        else (lambda x: [x] if x and isinstance(x, str) else [])(
-            app.get_value_from_key(key)
+    if (
+        not key
+        or key == config.TAG
+        or not app.verify_password()
+        or not (
+            val := app.get_history_from_key(key)
+            if history
+            else (lambda x: [x] if x and isinstance(x, str) else [])(
+                app.get_value_from_key(key)
+            )
         )
     ):
         return Result[Dict[str, List[str]]](Status.Err, {"values": []})
@@ -43,7 +52,13 @@ def set(
 ) -> Result[Dict[str, List[str]]]:
     app.crypto.configure(password)
 
-    if not key or not val or not (returned_key := app.create_or_append(key, val)):
+    if (
+        not key
+        or key == config.TAG
+        or not val
+        or not app.verify_password()
+        or not (returned_key := app.create_or_append(key, val))
+    ):
         return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
 
     return Result[Dict[str, List[str]]](Status.Ok, {"keys": [returned_key]})
@@ -56,7 +71,13 @@ def delete(
 ) -> Result[Dict[str, List[str]]]:
     app.crypto.configure(password)
 
-    if not key or not (returned_key := app.mark_as_deleted(key)):
+    if (
+        not key
+        or key == config.TAG
+        or not app.verify_password()
+        or not (returned_key := app.mark_as_deleted(key))
+    ):
+
         return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
 
     return Result[Dict[str, List[str]]](Status.Ok, {"keys": [returned_key]})

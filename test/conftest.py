@@ -1,4 +1,5 @@
 import pytest
+from secretkv import config
 from secretkv.application import SecretKV
 from secretkv.crypto import Crypto, EncryptedStr
 from secretkv.domain import Secret
@@ -10,12 +11,17 @@ def password():
     return "123456"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def wrong_password():
+    return "654321"
+
+
+@pytest.fixture(scope="session")
 def plaintext():
     return "test"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def ciphertext():
     return EncryptedStr(
         "gAAAAAAAAAAEDD9dWoav88oSAgySOtxskhlXiXqjKPp7dxXidYSLdRxGWiJcRygTgp1AQNtESUY1ztX2WE2SBSdOpF1uUJJlsQ=="
@@ -29,7 +35,7 @@ def crypto(password, scope="session"):
     return crypto
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def unconfigured_crypto():
     return Crypto()
 
@@ -37,6 +43,9 @@ def unconfigured_crypto():
 @pytest.fixture
 def in_memory_repository(crypto: Crypto):
     repository = InMemoryRepository()
+    repository.save(
+        Secret(crypto.encrypt(config.TAG, deterministic=True), crypto.encrypt(config.TAG[::-1]))
+    )
     repository.save(Secret(crypto.encrypt("key0", deterministic=True), crypto.encrypt("")))
     repository.save(Secret(crypto.encrypt("key1", deterministic=True), crypto.encrypt("val1a")))
     repository.save(Secret(crypto.encrypt("key1", deterministic=True), crypto.encrypt("val1b")))
@@ -47,6 +56,9 @@ def in_memory_repository(crypto: Crypto):
 @pytest.fixture
 def file_repository(crypto: Crypto):
     repository = FileRepository("test.json")
+    repository.save(
+        Secret(crypto.encrypt(config.TAG, deterministic=True), crypto.encrypt(config.TAG[::-1]))
+    )
     repository.save(Secret(crypto.encrypt("key0", deterministic=True), crypto.encrypt("")))
     repository.save(Secret(crypto.encrypt("key1", deterministic=True), crypto.encrypt("val1a")))
     repository.save(Secret(crypto.encrypt("key1", deterministic=True), crypto.encrypt("val1b")))

@@ -55,6 +55,9 @@ class InMemoryRepository(Repository):
         ]
         return True
 
+    def is_empty(self) -> bool:
+        return len(self._secrets) == 0
+
     def _retrieve_history_by_key(self, key: EncryptedStr) -> SecretsHistory:
         values = [(val, version) for val, version in self._secrets.get(str(key), [])]
         values.sort(key=lambda x: x[1])
@@ -95,6 +98,9 @@ class FileRepository(Repository):
             return self._implementation.save(secret)
         except Exception:
             return False
+
+    def is_empty(self) -> bool:
+        return len(self._implementation._secrets) == 0
 
     def clear(self) -> None:
         self._file.unlink()

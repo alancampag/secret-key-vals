@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import base64
-import os
 from typing import Any, Optional, cast
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+from secretkv import config
+
 
 class MissingCipherKeyException(Exception):
+    ...
+
+
+class InvalidKeyException(Exception):
     ...
 
 
@@ -32,7 +37,7 @@ class Crypto:
         self._cipher: Optional[Fernet] = None
 
     def configure(self, password: str) -> None:
-        self._seed = self._digest(os.getenv("SECRETKV_SEED") or password)
+        self._seed = self._digest(config.SEED or password)
 
         key = self._derive_key_from_password(password)
         self._cipher = Fernet(key)
@@ -41,22 +46,28 @@ class Crypto:
         if not self._cipher:
             raise MissingCipherKeyException("Cipher not configured")
 
-        if not deterministic:
-            return EncryptedStr(self._cipher.encrypt(msg.encode()).decode())
+        try:
+            if not deterministic:
+                return EncryptedStr(self._cipher.encrypt(msg.encode()).decode())
 
-        return EncryptedStr(
-            self._cipher._encrypt_from_parts(
-                msg.encode(),
-                len(msg),
-                cast(bytes, self._seed)[16:],
-            ).decode()
-        )
+            return EncryptedStr(
+                self._cipher._encrypt_from_parts(
+                    msg.encode(),
+                    len(msg),
+                    cast(bytes, self._seed)[16:],
+                ).decode()
+            )
+        except InvalidToken:
+            raise InvalidKeyException("Invalid key")
 
     def decrypt(self, msg: EncryptedStr) -> str:
         if not self._cipher:
             raise MissingCipherKeyException("Cipher not configured")
 
-        return self._cipher.decrypt(str(msg).encode()).decode()
+        try:
+            return self._cipher.decrypt(str(msg).encode()).decode()
+        except InvalidToken:
+            raise InvalidKeyException("Invalid key")
 
     def _derive_key_from_password(self, password: str) -> bytes:
         kdf = PBKDF2HMAC(

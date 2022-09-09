@@ -1,6 +1,7 @@
 import pytest
 import secretkv
 from secretkv.utils import Status
+from secretkv import config
 
 
 @pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
@@ -34,6 +35,18 @@ def test_get_deleted_key(skv, password):
 
 
 @pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_get_with_wrong_password(skv, wrong_password):
+    result = secretkv.get(skv, "key1", wrong_password)
+    assert result.status == Status.Err and result.data == {"values": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_get_tag_key(skv, password):
+    result = secretkv.get(skv, config.TAG, password)
+    assert result.status == Status.Err and result.data == {"values": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
 def test_set(skv, password):
     result = secretkv.set(skv, "key3", "val3", password)
     assert result.status == Status.Ok and result.data == {"keys": ["key3"]}
@@ -52,6 +65,18 @@ def test_set_empty_val(skv, password):
 
 
 @pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_set_with_wrong_password(skv, wrong_password):
+    result = secretkv.set(skv, "key1", "val1", wrong_password)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_set_tag_key(skv, password):
+    result = secretkv.set(skv, config.TAG, "val0", password)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
 def test_list(skv, password):
     result = secretkv.list(skv, password)
     assert result.status == Status.Ok and result.data == {"keys": ["key1", "key2"]}
@@ -61,6 +86,30 @@ def test_list(skv, password):
 def test_list_including_deleted(skv, password):
     result = secretkv.list(skv, password, all=True)
     assert result.status == Status.Ok and result.data == {"keys": ["key0", "key1", "key2"]}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_list_with_wrong_password(skv, wrong_password):
+    result = secretkv.list(skv, wrong_password)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_list_including_deleted_with_wrong_password(skv, wrong_password):
+    result = secretkv.list(skv, wrong_password, all=True)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_list_doesnt_include_tag_key(skv, password):
+    result = secretkv.list(skv, password)
+    assert result.status == Status.Ok and config.TAG not in result.data.get("keys")
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_list_including_deleted_doesnt_include_tag_key(skv, password):
+    result = secretkv.list(skv, password)
+    assert result.status == Status.Ok and config.TAG not in result.data.get("keys")
 
 
 @pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
@@ -84,6 +133,18 @@ def test_delete_empty_key(skv, password):
 @pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
 def test_delete_already_deleted_key(skv, password):
     result = secretkv.delete(skv, "key0", password)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_delete_with_wrong_password(skv, wrong_password):
+    result = secretkv.delete(skv, "key1", wrong_password)
+    assert result.status == Status.Err and result.data == {"keys": []}
+
+
+@pytest.mark.parametrize("skv", ["in_memory_repository", "file_repository"], indirect=True)
+def test_delete_tag_key(skv, password):
+    result = secretkv.delete(skv, config.TAG, password)
     assert result.status == Status.Err and result.data == {"keys": []}
 
 
