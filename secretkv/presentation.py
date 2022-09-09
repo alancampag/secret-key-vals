@@ -13,7 +13,7 @@ def list(
     app.crypto.configure(password)
 
     if not app.verify_password():
-        return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
+        return Result[Dict[str, List[str]]](Status.Err, {})
 
     data = {"keys": [k for k in app.list_every_key(all) if k != config.TAG]}
     return Result[Dict[str, List[str]]](Status.Ok, data)
@@ -39,9 +39,9 @@ def get(
             )
         )
     ):
-        return Result[Dict[str, List[str]]](Status.Err, {"values": []})
+        return Result[Dict[str, List[str]]](Status.Err, {})
 
-    return Result[Dict[str, List[str]]](Status.Ok, {"values": val})
+    return Result[Dict[str, List[str]]](Status.Ok, {"values": val[::-1]})
 
 
 def set(
@@ -57,11 +57,11 @@ def set(
         or key == config.TAG
         or not val
         or not app.verify_password()
-        or not (returned_key := app.create_or_append(key, val))
+        or not (app.create_or_append(key, val))
     ):
-        return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
+        return Result[Dict[str, List[str]]](Status.Err, {})
 
-    return Result[Dict[str, List[str]]](Status.Ok, {"keys": [returned_key]})
+    return Result[Dict[str, List[str]]](Status.Ok, {})
 
 
 def delete(
@@ -75,12 +75,12 @@ def delete(
         not key
         or key == config.TAG
         or not app.verify_password()
-        or not (returned_key := app.mark_as_deleted(key))
+        or not (app.mark_as_deleted(key))
     ):
 
-        return Result[Dict[str, List[str]]](Status.Err, {"keys": []})
+        return Result[Dict[str, List[str]]](Status.Err, {})
 
-    return Result[Dict[str, List[str]]](Status.Ok, {"keys": [returned_key]})
+    return Result[Dict[str, List[str]]](Status.Ok, {})
 
 
 def dump(

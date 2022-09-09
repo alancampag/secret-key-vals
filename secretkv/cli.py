@@ -17,11 +17,7 @@ class InvalidCommandException(Exception):
 
 
 def get_master_password(command: Command) -> str:
-    return (
-        command.kwargs.pop("masterpass", "")
-        or config.MASTERPASS
-        or Cli.prompt_for_password()
-    )
+    return command.kwargs.pop("masterpass", "") or config.MASTERPASS or Cli.prompt_for_password()
 
 
 class Command:
@@ -29,7 +25,7 @@ class Command:
         self.func_name = func_name
         self.kwargs = kwargs
 
-    def execute(self, dependencies: Dict[str, Any]) -> CommandOutput:
+    def execute(self, dependencies: Dict[str, Any]) -> Optional[CommandOutput]:
         func = getattr(secretkv, self.func_name, None)
         if not func or not callable(func):
             return {"message": [f"Command {self.func_name} doesn't exist"]}
@@ -39,7 +35,9 @@ class Command:
         self.kwargs.update(dependencies)
         response: Result[CommandOutput] = func(**self.kwargs)
         if response.status == Status.Ok:
-            return response.data
+            if output := response.data:
+                return output
+            return None
 
         return {"message": ["Something went wrong!"]}
 
@@ -170,4 +168,6 @@ class Cli:
 
     @staticmethod
     def show_output(results: CommandOutput) -> None:
+        if "values" in results:
+            results = [v if v != "" else None for v in results["values"]]
         print(json.dumps(results, indent=2))

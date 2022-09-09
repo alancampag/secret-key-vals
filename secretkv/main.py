@@ -18,8 +18,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         Crypto(),
     )
 
-    output = command.execute(dependencies={"app": app})
-    Cli.show_output(output)
+    if output := command.execute(dependencies={"app": app}):
+        Cli.show_output(output)
 
     return 0
 
