@@ -104,7 +104,7 @@ class Cli:
         )
 
         del_subcommand = subparsers.add_parser(
-            "del",
+            "delete",
             help="delete secret",
         )
         del_subcommand.add_argument(
