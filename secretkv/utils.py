@@ -35,10 +35,10 @@ class PersistentDict(MutableMapping[KT, VT]):
         file: str = f"/tmp/{uuid.uuid4()}",
         **kwargs,
     ) -> None:
-
-        self._file = Path(file)
+        self._file = Path(file).expanduser()
 
         if not self._file.exists():
+            self._file.parent.mkdir(parents=True, exist_ok=True)
             self._file.write_text("{}")
 
         self.update(dict(*args, **kwargs))

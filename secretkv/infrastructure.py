@@ -70,7 +70,7 @@ class InMemoryRepository(Repository):
 
 
 class FileRepository(Repository):
-    def __init__(self, file: str = "secrets.json") -> None:
+    def __init__(self, file: str = "~/.skv/secrets.json") -> None:
         self._implementation = InMemoryRepository()
         self._implementation._secrets = PDict(file=file)
         self._file = Path(file)
