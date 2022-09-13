@@ -2,7 +2,7 @@ import json
 import uuid
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Generic, MutableMapping, TypeVar
+from typing import Any, Dict, Generic, MutableMapping, TypeVar, cast
 
 
 class Status(Enum):
@@ -44,7 +44,7 @@ class PersistentDict(MutableMapping[KT, VT]):
         self.update(dict(*args, **kwargs))
 
     def _load(self) -> Dict[KT, VT]:
-        return json.loads(self._file.read_text())
+        return cast(Dict[KT, VT], json.loads(self._file.read_text()))
 
     def _save(self, dct: Dict[KT, VT]) -> None:
         self._file.write_text(json.dumps(dct))

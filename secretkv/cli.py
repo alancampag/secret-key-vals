@@ -169,5 +169,6 @@ class Cli:
     @staticmethod
     def show_output(results: CommandOutput) -> None:
         if "values" in results:
-            results = [v if v != "" else None for v in results["values"]]
+            print(json.dumps({"values": results}, indent=2))
+            return
         print(json.dumps(results, indent=2))
