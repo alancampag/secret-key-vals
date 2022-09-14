@@ -1,3 +1,5 @@
+[![Tests](https://github.com/alancampag/secret-key-vals/actions/workflows/ci.yml/badge.svg)](https://github.com/alancampag/secret-key-vals/actions/workflows/ci.yml)
+
 # secret-key-vals
 
 Store encrypted key-value pairs
